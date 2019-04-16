@@ -1,5 +1,7 @@
 export default {
   MAX_ATTACHMENT_SIZE: 5000000,
+
+  //AWS-AMPLIFY configs
   s3: {
     REGION: "us-east-1",
     BUCKET: "syberspace.notes-app-bucket"

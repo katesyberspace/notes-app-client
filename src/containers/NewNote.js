@@ -1,8 +1,11 @@
 import React, { Component } from "react";
 import { FormGroup, FormControl, ControlLabel } from "react-bootstrap";
+import { API } from "aws-amplify";
 import LoaderButton from "../components/LoaderButton";
 import config from "../config";
 import "./NewNote.css";
+import {s3Upload} from "../libs/awsLib";
+
 
 export default class NewNote extends Component {
   constructor(props){
@@ -14,6 +17,12 @@ export default class NewNote extends Component {
       content: ""
     };
   }
+
+  createNote(note) {
+    return API.post("notes", "/notes", {
+      body: note
+    });
+  };
 
   validateForm() {
     return this.state.content.length > 0;
@@ -29,15 +38,32 @@ export default class NewNote extends Component {
     this.file = event.target.files[0]
   };
 
-  handleSubmit = event => {
+  handleSubmit = async event => {
     event.preventDefault();
 
     if (this.file && this.file.size > config.MAX_ATTACHMENT_SIZE) {
       alert(`Max file size ${config.MAX_ATTACHMENT_SIZE/1000000} MB.`);
       return
     }
+    this.setState({isLoading: true});
 
-    this.setState({isLoading: true})
+    try {
+      const attachment = this.file
+      ? await s3Upload(this.file)
+      : null;
+
+      const note = {
+        attachment,
+        content: this.state.content
+      };
+      await this.createNote(note) ;
+
+      this.props.history.push("/");
+
+    } catch (error) {
+      alert(error)
+      this.setState({isLoading: false});
+    }
 
   };
 
