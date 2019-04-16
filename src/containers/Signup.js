@@ -7,6 +7,7 @@ import {
 } from "react-bootstrap"
 import LoadButton from "../components/LoaderButton";
 import "./Signup.css";
+import { Auth }from "aws-amplify"
 
 export default class Signup extends Component {
   constructor(props) {
@@ -44,7 +45,18 @@ export default class Signup extends Component {
     event.preventDefault();
 
     this.setState({ isLoading: true });
-    this.setState({ newUser: "test" });
+
+    try {
+      const newUser = await Auth.signUp({
+        username: this.state.email,
+        password: this.state.password
+      });
+      this.setState({ newUser });
+    } catch (error) {
+      //TODO: handle error.code === 'UsernameExistsException'
+      alert(error.message);
+    }
+
     this.setState({ isLoading: false });
   };
 
@@ -52,6 +64,17 @@ export default class Signup extends Component {
     event.preventDefault();
 
     this.setState({isLoading: true});
+
+    try {
+      await Auth.confirmSignUp(this.state.email, this.state.confirmationCode);
+      await Auth.signIn(this.state.email, this.state.password);
+
+      this.props.userHasAuthenticated(true);
+      this.props.history.push("/");
+    } catch (error) {
+      alert(error.message);
+      this.setState({isLoading: false});
+    }
   };
 
   renderConfirmationForm() {
